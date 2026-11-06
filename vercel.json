@@ -15,12 +15,11 @@
     },
     {
       "source": "/static/(.*)",
-      "destination": "/frontend/$1"
+      "destination": "/static/$1"
     },
     {
       "source": "/(.*)",
-      "destination": "/frontend/index.html"
+      "destination": "/index.html"
     }
   ]
 }
-

@@ -1,7 +1,10 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.db
 *.db-journal
+*.db-shm
+*.db-wal
 /data/*.db
 .venv/
 venv/

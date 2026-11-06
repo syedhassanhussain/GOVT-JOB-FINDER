@@ -56,18 +56,20 @@ app.add_middleware(
 @app.on_event("startup")
 def startup_event():
     """Initializes database and seeds baseline active verified vacancies."""
-    init_db()
-    # Ingest seed vacancies into DB if empty
-    conn = get_db_connection()
-    c = conn.cursor()
-    c.execute("SELECT COUNT(*) as cnt FROM jobs")
-    if c.fetchone()["cnt"] == 0:
-        scraper_engine.scan_all_sources()
-    conn.close()
+    try:
+        init_db()
+    except Exception as e:
+        print(f"[Startup Warning]: init_db error: {e}")
 
     # Serverless functions may be suspended between requests; use an external
     # scheduler for recurring work instead of a process-local daemon.
-    if os.getenv("VERCEL") != "1" and not scheduler_daemon.is_alive():
+    try:
+        from .database import is_serverless
+        serverless = is_serverless()
+    except Exception:
+        serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+
+    if not serverless and not scheduler_daemon.is_alive():
         try:
             scheduler_daemon.start()
         except Exception:
@@ -595,12 +597,12 @@ def get_scrape_logs():
 
 @app.get("/api/health")
 def health_check():
-    from .database import is_mongo_active, resolve_db_path
+    from .database import is_mongo_active, resolve_db_path, is_serverless
     mongo_connected = is_mongo_active()
     return {
         "status": "healthy",
         "service": "AI Government Job Finder API",
-        "environment": "vercel_serverless" if os.getenv("VERCEL") == "1" else "standard",
+        "environment": "vercel_serverless" if is_serverless() else "standard",
         "database_type": "cloud_mongodb_atlas" if mongo_connected else "sqlite",
         "database_path": "cloud_mongodb" if mongo_connected else str(resolve_db_path()),
         "timestamp": datetime.now().isoformat()
@@ -610,15 +612,19 @@ def health_check():
 # --------------------------------------------------------------------------
 # FRONTEND STATIC FILES & SPA SERVING
 # --------------------------------------------------------------------------
-if FRONTEND_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+STATIC_DIR = FRONTEND_DIR if FRONTEND_DIR.exists() else (BASE_DIR / "public")
+
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @app.get("/")
+@app.get("/index.html")
 def serve_index():
-    index_file = FRONTEND_DIR / "index.html"
-    if index_file.exists():
-        return FileResponse(index_file)
+    if STATIC_DIR.exists():
+        index_file = STATIC_DIR / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file)
     return {"message": "Government Job Finder Backend API is running. Access /docs for API documentation."}
 
 

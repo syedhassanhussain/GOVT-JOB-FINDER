@@ -12,14 +12,30 @@ from pathlib import Path
 # Database path resolution (Serverless & Container resilient)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+def is_serverless() -> bool:
+    """Detects whether code is executing in a serverless environment (Vercel, AWS Lambda, etc.)."""
+    return any([
+        os.getenv("VERCEL") is not None,
+        os.getenv("VERCEL_ENV") is not None,
+        os.getenv("VERCEL_URL") is not None,
+        os.getenv("AWS_LAMBDA_FUNCTION_NAME") is not None,
+        os.getenv("LAMBDA_TASK_ROOT") is not None,
+        os.getenv("NOW_REGION") is not None,
+    ])
+
 def resolve_db_path() -> Path:
     """Dynamically resolves SQLite path with Vercel serverless /tmp fallback."""
     if os.getenv("DATABASE_PATH"):
         return Path(os.environ["DATABASE_PATH"])
-    if os.getenv("VERCEL") == "1" or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
-        tmp_path = Path("/tmp") / "govt_job_finder.db"
-        return tmp_path
-    return BASE_DIR / "data" / "govt_job_finder.db"
+    if is_serverless():
+        return Path("/tmp") / "govt_job_finder.db"
+    
+    data_dir = BASE_DIR / "data"
+    try:
+        data_dir.mkdir(parents=True, exist_ok=True)
+        return data_dir / "govt_job_finder.db"
+    except (PermissionError, OSError):
+        return Path("/tmp") / "govt_job_finder.db"
 
 DB_PATH = resolve_db_path()
 
@@ -58,12 +74,15 @@ def is_mongo_active() -> bool:
 def get_db_connection():
     """Returns a SQLite connection with dict-like row factory and FK support."""
     current_path = resolve_db_path()
-    current_path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        current_path.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
     conn = sqlite3.connect(str(current_path), timeout=20.0)
     conn.row_factory = sqlite3.Row
     try:
         conn.execute("PRAGMA foreign_keys = ON;")
-        if os.getenv("VERCEL") == "1" or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        if is_serverless():
             conn.execute("PRAGMA journal_mode = DELETE;")
         else:
             conn.execute("PRAGMA journal_mode = WAL;")
@@ -250,6 +269,18 @@ def init_db():
 
     # Seed official sources if not present
     seed_sources(cursor)
+
+    # Ingest verified vacancies corpus if database is newly initialized
+    try:
+        cursor.execute("SELECT COUNT(*) as cnt FROM jobs")
+        if cursor.fetchone()["cnt"] == 0:
+            try:
+                from .seed_data import seed_initial_jobs
+            except ImportError:
+                from seed_data import seed_initial_jobs
+            seed_initial_jobs(cursor)
+    except Exception as e:
+        print(f"[Warning]: Failed to seed baseline vacancies: {e}")
 
     conn.commit()
     conn.close()
