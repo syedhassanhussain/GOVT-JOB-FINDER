@@ -612,10 +612,14 @@ def health_check():
 # --------------------------------------------------------------------------
 # FRONTEND STATIC FILES & SPA SERVING
 # --------------------------------------------------------------------------
-STATIC_DIR = FRONTEND_DIR if FRONTEND_DIR.exists() else (BASE_DIR / "public")
+STATIC_DIR = FRONTEND_DIR
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    if (STATIC_DIR / "css").exists():
+        app.mount("/css", StaticFiles(directory=str(STATIC_DIR / "css")), name="css")
+    if (STATIC_DIR / "js").exists():
+        app.mount("/js", StaticFiles(directory=str(STATIC_DIR / "js")), name="js")
 
 
 @app.get("/")
@@ -630,4 +634,5 @@ def serve_index():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=port, reload=False)
