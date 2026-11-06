@@ -1,4 +1,6 @@
-<<<<<<< HEAD
+# GOVT-JOB-FINDER
+An intelligent mobile and web application that automatically discovers official government job vacancies across Pakistan, evaluates them against a user's qualifications, age, domicile, and career preferences, and provides a daily personalized shortlist with official application links and step-by-step instructions.
+
 # AI-Powered Government Job Finder & Personalized Career Assistant
 
 An intelligent mobile and web application that automatically discovers official government job vacancies across Pakistan, evaluates them against a user's qualifications, age, domicile, and career preferences, and provides a daily personalized shortlist with official application links and step-by-step instructions.
@@ -106,7 +108,30 @@ Run the test suite anytime:
 py tests\test_api_and_matching.py
 ```
 
-=======
-# GOVT-JOB-FINDER
-An intelligent mobile and web application that automatically discovers official government job vacancies across Pakistan, evaluates them against a user's qualifications, age, domicile, and career preferences, and provides a daily personalized shortlist with official application links and step-by-step instructions.
->>>>>>> 5b43aa6fea9a48f5481e54a97dff0ceb076bd56f
+---
+
+## Deploying on Vercel
+
+The FastAPI application and static frontend are served from the same origin. Vercel uses
+`pyproject.toml` to load `backend.app.main:app`; Python packages are installed from
+`requirements.txt`. There is no separate frontend build step or `vercel.json` routing
+configuration.
+
+1. Import this GitHub repository as a Vercel project and keep the **Root Directory** at
+   the repository root.
+2. Leave the Build Command and Output Directory at their defaults; Vercel detects the
+   Python runtime and installs `requirements.txt`.
+3. Configure the environment variables below only if needed, then deploy.
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `CORS_ORIGINS` | No | Comma-separated allowed origins, only if a separate frontend origin will call the API. Same-origin deployment needs no CORS setting. |
+| `DATABASE_PATH` | No | Optional SQLite file path override. On Vercel, the default is `/tmp/govt_job_finder.db`. |
+
+Vercel sets `VERCEL=1` automatically. The application currently uses SQLite and does
+**not** connect to MongoDB. Vercel's `/tmp` storage is temporary and instance-local, so
+user profiles, saved jobs, and notifications are not durable across restarts or function
+instances. Use a persistent shared database before relying on this deployment for real
+users; configuring a MongoDB URI alone will not work without migrating the SQLite-based
+queries. The process-local daily background scheduler is disabled on Vercel; schedule
+the existing admin automation endpoint externally if daily automation is required.

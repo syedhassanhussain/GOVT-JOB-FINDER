@@ -3,6 +3,7 @@ FastAPI Server & REST API for AI-Powered Government Job Finder & Personalized Ca
 """
 
 import json
+import os
 from pathlib import Path
 from typing import List, Optional
 from datetime import datetime, date
@@ -36,10 +37,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS
+# CORS configuration
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+if cors_origins_env:
+    origins = [o.strip().rstrip("/") for o in cors_origins_env.split(",") if o.strip()]
+else:
+    origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -58,8 +65,9 @@ def startup_event():
         scraper_engine.scan_all_sources()
     conn.close()
 
-    # Start background scheduler daemon
-    if not scheduler_daemon.is_alive():
+    # Serverless functions may be suspended between requests; use an external
+    # scheduler for recurring work instead of a process-local daemon.
+    if os.getenv("VERCEL") != "1" and not scheduler_daemon.is_alive():
         try:
             scheduler_daemon.start()
         except Exception:
@@ -585,10 +593,25 @@ def get_scrape_logs():
     return {"logs": logs}
 
 
+@app.get("/api/health")
+def health_check():
+    from .database import is_mongo_active, resolve_db_path
+    mongo_connected = is_mongo_active()
+    return {
+        "status": "healthy",
+        "service": "AI Government Job Finder API",
+        "environment": "vercel_serverless" if os.getenv("VERCEL") == "1" else "standard",
+        "database_type": "cloud_mongodb_atlas" if mongo_connected else "sqlite",
+        "database_path": "cloud_mongodb" if mongo_connected else str(resolve_db_path()),
+        "timestamp": datetime.now().isoformat()
+    }
+
+
 # --------------------------------------------------------------------------
 # FRONTEND STATIC FILES & SPA SERVING
 # --------------------------------------------------------------------------
-app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 
 @app.get("/")
@@ -602,4 +625,3 @@ def serve_index():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("backend.app.main:app", host="0.0.0.0", port=8000, reload=True)
-

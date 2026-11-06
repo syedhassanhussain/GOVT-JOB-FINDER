@@ -9,18 +9,66 @@ import json
 from datetime import datetime, date
 from pathlib import Path
 
-# Database path
+# Database path resolution (Serverless & Container resilient)
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-DB_PATH = BASE_DIR / "data" / "govt_job_finder.db"
+
+def resolve_db_path() -> Path:
+    """Dynamically resolves SQLite path with Vercel serverless /tmp fallback."""
+    if os.getenv("DATABASE_PATH"):
+        return Path(os.environ["DATABASE_PATH"])
+    if os.getenv("VERCEL") == "1" or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+        tmp_path = Path("/tmp") / "govt_job_finder.db"
+        return tmp_path
+    return BASE_DIR / "data" / "govt_job_finder.db"
+
+DB_PATH = resolve_db_path()
+
+# Optional Cloud MongoDB Atlas Integration
+_MONGO_CLIENT = None
+_MONGO_DB = None
+
+def get_mongo_db():
+    """
+    Returns cloud-hosted MongoDB Atlas database instance if MONGODB_URI is provided.
+    Credentials must be provided via the MONGODB_URI environment variable.
+    """
+    global _MONGO_CLIENT, _MONGO_DB
+    mongo_uri = os.getenv("MONGODB_URI")
+    if not mongo_uri:
+        return None
+    if _MONGO_DB is None:
+        try:
+            from pymongo import MongoClient
+            db_name = os.getenv("MONGODB_DB_NAME", "govt_job_finder")
+            _MONGO_CLIENT = MongoClient(mongo_uri, serverSelectionTimeoutMS=4000)
+            _MONGO_CLIENT.admin.command('ping')
+            _MONGO_DB = _MONGO_CLIENT[db_name]
+        except Exception as e:
+            # Graceful fallback: do not crash if cloud MongoDB is unreachable
+            print(f"[Database Notification]: MongoDB connection failed ({e}). Falling back to SQLite.")
+            return None
+    return _MONGO_DB
+
+
+def is_mongo_active() -> bool:
+    """Returns True if a cloud MongoDB instance is connected."""
+    return get_mongo_db() is not None
 
 
 def get_db_connection():
     """Returns a SQLite connection with dict-like row factory and FK support."""
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(DB_PATH), timeout=20.0)
+    current_path = resolve_db_path()
+    current_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(current_path), timeout=20.0)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON;")
-    conn.execute("PRAGMA journal_mode = WAL;")
+    try:
+        conn.execute("PRAGMA foreign_keys = ON;")
+        if os.getenv("VERCEL") == "1" or os.getenv("AWS_LAMBDA_FUNCTION_NAME"):
+            conn.execute("PRAGMA journal_mode = DELETE;")
+        else:
+            conn.execute("PRAGMA journal_mode = WAL;")
+    except Exception:
+        pass
     return conn
 
 
@@ -295,4 +343,3 @@ def seed_sources(cursor):
 if __name__ == "__main__":
     init_db()
     print("Database schema successfully initialized.")
-

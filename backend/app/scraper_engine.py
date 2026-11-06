@@ -21,6 +21,7 @@ Features:
 import requests
 import hashlib
 import json
+import os
 import time
 from datetime import datetime, date, timedelta
 from typing import List, Dict, Any, Tuple
@@ -500,13 +501,15 @@ class ScraperEngine:
         jobs_url = source["official_jobs_url"]
         live_online = False
 
-        # Live probe test (respectful HEAD/GET with short timeout)
-        try:
-            resp = self.session.get(portal_url, timeout=4.0, allow_redirects=True)
-            if resp.status_code in [200, 301, 302, 403]:  # 403 or 200 means server is live
-                live_online = True
-        except Exception:
-            live_online = False
+        # Avoid serial external probes during serverless cold starts. The
+        # verified vacancy feed is still ingested below.
+        if os.getenv("VERCEL") != "1":
+            try:
+                resp = self.session.get(portal_url, timeout=4.0, allow_redirects=True)
+                if resp.status_code in [200, 301, 302, 403]:
+                    live_online = True
+            except Exception:
+                live_online = False
 
         # Retrieve relevant vacancies for this source
         candidate_jobs = [v for v in OFFICIAL_SEED_VACANCIES if v["source_code"] == source_code]
@@ -597,7 +600,11 @@ class ScraperEngine:
             jobs_scanned,
             new_jobs_added,
             updated_jobs,
-            None if live_online else "Live portal latency high, ingested verified gazette feed",
+            None if live_online else (
+                "Live portal probe skipped in Vercel runtime; ingested verified gazette feed"
+                if os.getenv("VERCEL") == "1"
+                else "Live portal latency high, ingested verified gazette feed"
+            ),
             duration
         ))
 
