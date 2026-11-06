@@ -1,6 +1,4 @@
-# GOVT-JOB-FINDER
-An intelligent mobile and web application that automatically discovers official government job vacancies across Pakistan, evaluates them against a user's qualifications, age, domicile, and career preferences, and provides a daily personalized shortlist with official application links and step-by-step instructions.
-
+<<<<<<< HEAD
 # AI-Powered Government Job Finder & Personalized Career Assistant
 
 An intelligent mobile and web application that automatically discovers official government job vacancies across Pakistan, evaluates them against a user's qualifications, age, domicile, and career preferences, and provides a daily personalized shortlist with official application links and step-by-step instructions.
@@ -60,17 +58,16 @@ py -m pip install -r requirements.txt
 ### 3. Run the Application
 Start the application server:
 ```bash
-py main.py
+py run_server.py
 ```
 Or directly with uvicorn:
 ```bash
-py -m uvicorn main:app --reload
+py -m uvicorn backend.app.main:app
 ```
 
 ### 4. Access the App
 - **Web App / Mobile Experience**: Open [http://localhost:8000](http://localhost:8000)
 - **Interactive REST API Docs**: Open [http://localhost:8000/docs](http://localhost:8000/docs)
-- **API Health Check**: Open [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
 ---
 
@@ -78,14 +75,11 @@ py -m uvicorn main:app --reload
 
 ```
 d:\GOVT JOB FINDER\
-├── api\
-│   └── index.py                 # Vercel Serverless Function entrypoint
 ├── backend\
-│   ├── __init__.py
 │   └── app\
 │       ├── __init__.py
 │       ├── main.py              # FastAPI endpoints & static file router
-│       ├── database.py          # SQLite & MongoDB Atlas integration
+│       ├── database.py          # SQLite database connection & schema
 │       ├── models.py            # Pydantic schemas & validation
 │       ├── matching_engine.py   # AI eligibility rules & 0-100% scorer
 │       ├── scraper_engine.py    # Harvester for FPSC, PPSC, SPSC, KPPSC, BPSC, NJP, NTS
@@ -95,13 +89,11 @@ d:\GOVT JOB FINDER\
 │   ├── index.html               # Responsive Mobile & Desktop Web App
 │   ├── css\style.css            # Custom government styling & animations
 │   └── js\app.js                # State management, API calls, and modals
+├── data\                        # SQLite database & runtime logs
 ├── tests\
 │   └── test_api_and_matching.py # Automated test suite (100% pass)
-├── main.py                      # Root FastAPI entrypoint
-├── pyproject.toml               # Vercel FastAPI framework configuration
-├── vercel.json                  # Vercel Edge rewrite routing rules
 ├── requirements.txt             # Python dependencies
-├── .gitignore                   # Clean repository exclusions
+├── run_server.py                # Convenient startup script
 └── README.md
 ```
 
@@ -114,30 +106,7 @@ Run the test suite anytime:
 py tests\test_api_and_matching.py
 ```
 
----
-
-## Deploying on Vercel
-
-The FastAPI application and static frontend are served from the same origin. Vercel uses
-`pyproject.toml` to load `backend.app.main:app`; Python packages are installed from
-`requirements.txt`. There is no separate frontend build step or `vercel.json` routing
-configuration.
-
-1. Import this GitHub repository as a Vercel project and keep the **Root Directory** at
-   the repository root.
-2. Leave the Build Command and Output Directory at their defaults; Vercel detects the
-   Python runtime and installs `requirements.txt`.
-3. Configure the environment variables below only if needed, then deploy.
-
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `CORS_ORIGINS` | No | Comma-separated allowed origins, only if a separate frontend origin will call the API. Same-origin deployment needs no CORS setting. |
-| `DATABASE_PATH` | No | Optional SQLite file path override. On Vercel, the default is `/tmp/govt_job_finder.db`. |
-
-Vercel sets `VERCEL=1` automatically. The application currently uses SQLite and does
-**not** connect to MongoDB. Vercel's `/tmp` storage is temporary and instance-local, so
-user profiles, saved jobs, and notifications are not durable across restarts or function
-instances. Use a persistent shared database before relying on this deployment for real
-users; configuring a MongoDB URI alone will not work without migrating the SQLite-based
-queries. The process-local daily background scheduler is disabled on Vercel; schedule
-the existing admin automation endpoint externally if daily automation is required.
+=======
+# GOVT-JOB-FINDER
+An intelligent mobile and web application that automatically discovers official government job vacancies across Pakistan, evaluates them against a user's qualifications, age, domicile, and career preferences, and provides a daily personalized shortlist with official application links and step-by-step instructions.
+>>>>>>> 5b43aa6fea9a48f5481e54a97dff0ceb076bd56f

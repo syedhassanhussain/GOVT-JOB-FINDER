@@ -3,7 +3,6 @@ FastAPI Server & REST API for AI-Powered Government Job Finder & Personalized Ca
 """
 
 import json
-import os
 from pathlib import Path
 from typing import List, Optional
 from datetime import datetime, date
@@ -37,16 +36,10 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS configuration
-cors_origins_env = os.getenv("CORS_ORIGINS", "")
-if cors_origins_env:
-    origins = [o.strip().rstrip("/") for o in cors_origins_env.split(",") if o.strip()]
-else:
-    origins = ["*"]
-
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -56,20 +49,17 @@ app.add_middleware(
 @app.on_event("startup")
 def startup_event():
     """Initializes database and seeds baseline active verified vacancies."""
-    try:
-        init_db()
-    except Exception as e:
-        print(f"[Startup Warning]: init_db error: {e}")
+    init_db()
+    # Ingest seed vacancies into DB if empty
+    conn = get_db_connection()
+    c = conn.cursor()
+    c.execute("SELECT COUNT(*) as cnt FROM jobs")
+    if c.fetchone()["cnt"] == 0:
+        scraper_engine.scan_all_sources()
+    conn.close()
 
-    # Serverless functions may be suspended between requests; use an external
-    # scheduler for recurring work instead of a process-local daemon.
-    try:
-        from .database import is_serverless
-        serverless = is_serverless()
-    except Exception:
-        serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
-
-    if not serverless and not scheduler_daemon.is_alive():
+    # Start background scheduler daemon
+    if not scheduler_daemon.is_alive():
         try:
             scheduler_daemon.start()
         except Exception:
@@ -595,44 +585,21 @@ def get_scrape_logs():
     return {"logs": logs}
 
 
-@app.get("/api/health")
-def health_check():
-    from .database import is_mongo_active, resolve_db_path, is_serverless
-    mongo_connected = is_mongo_active()
-    return {
-        "status": "healthy",
-        "service": "AI Government Job Finder API",
-        "environment": "vercel_serverless" if is_serverless() else "standard",
-        "database_type": "cloud_mongodb_atlas" if mongo_connected else "sqlite",
-        "database_path": "cloud_mongodb" if mongo_connected else str(resolve_db_path()),
-        "timestamp": datetime.now().isoformat()
-    }
-
-
 # --------------------------------------------------------------------------
 # FRONTEND STATIC FILES & SPA SERVING
 # --------------------------------------------------------------------------
-STATIC_DIR = FRONTEND_DIR
-
-if STATIC_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-    if (STATIC_DIR / "css").exists():
-        app.mount("/css", StaticFiles(directory=str(STATIC_DIR / "css")), name="css")
-    if (STATIC_DIR / "js").exists():
-        app.mount("/js", StaticFiles(directory=str(STATIC_DIR / "js")), name="js")
+app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 
 @app.get("/")
-@app.get("/index.html")
 def serve_index():
-    if STATIC_DIR.exists():
-        index_file = STATIC_DIR / "index.html"
-        if index_file.exists():
-            return FileResponse(index_file)
+    index_file = FRONTEND_DIR / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
     return {"message": "Government Job Finder Backend API is running. Access /docs for API documentation."}
 
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=port, reload=False)
+    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=8000, reload=True)
+

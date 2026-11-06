@@ -9,85 +9,18 @@ import json
 from datetime import datetime, date
 from pathlib import Path
 
-# Database path resolution (Serverless & Container resilient)
+# Database path
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
-def is_serverless() -> bool:
-    """Detects whether code is executing in a serverless environment (Vercel, AWS Lambda, etc.)."""
-    return any([
-        os.getenv("VERCEL") is not None,
-        os.getenv("VERCEL_ENV") is not None,
-        os.getenv("VERCEL_URL") is not None,
-        os.getenv("AWS_LAMBDA_FUNCTION_NAME") is not None,
-        os.getenv("LAMBDA_TASK_ROOT") is not None,
-        os.getenv("NOW_REGION") is not None,
-    ])
-
-def resolve_db_path() -> Path:
-    """Dynamically resolves SQLite path with Vercel serverless /tmp fallback."""
-    if os.getenv("DATABASE_PATH"):
-        return Path(os.environ["DATABASE_PATH"])
-    if is_serverless():
-        return Path("/tmp") / "govt_job_finder.db"
-    
-    data_dir = BASE_DIR / "data"
-    try:
-        data_dir.mkdir(parents=True, exist_ok=True)
-        return data_dir / "govt_job_finder.db"
-    except (PermissionError, OSError):
-        return Path("/tmp") / "govt_job_finder.db"
-
-DB_PATH = resolve_db_path()
-
-# Optional Cloud MongoDB Atlas Integration
-_MONGO_CLIENT = None
-_MONGO_DB = None
-
-def get_mongo_db():
-    """
-    Returns cloud-hosted MongoDB Atlas database instance if MONGODB_URI is provided.
-    Credentials must be provided via the MONGODB_URI environment variable.
-    """
-    global _MONGO_CLIENT, _MONGO_DB
-    mongo_uri = os.getenv("MONGODB_URI")
-    if not mongo_uri:
-        return None
-    if _MONGO_DB is None:
-        try:
-            from pymongo import MongoClient
-            db_name = os.getenv("MONGODB_DB_NAME", "govt_job_finder")
-            _MONGO_CLIENT = MongoClient(mongo_uri, serverSelectionTimeoutMS=4000)
-            _MONGO_CLIENT.admin.command('ping')
-            _MONGO_DB = _MONGO_CLIENT[db_name]
-        except Exception as e:
-            # Graceful fallback: do not crash if cloud MongoDB is unreachable
-            print(f"[Database Notification]: MongoDB connection failed ({e}). Falling back to SQLite.")
-            return None
-    return _MONGO_DB
-
-
-def is_mongo_active() -> bool:
-    """Returns True if a cloud MongoDB instance is connected."""
-    return get_mongo_db() is not None
+DB_PATH = BASE_DIR / "data" / "govt_job_finder.db"
 
 
 def get_db_connection():
     """Returns a SQLite connection with dict-like row factory and FK support."""
-    current_path = resolve_db_path()
-    try:
-        current_path.parent.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        pass
-    conn = sqlite3.connect(str(current_path), timeout=20.0)
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(DB_PATH), timeout=20.0)
     conn.row_factory = sqlite3.Row
-    try:
-        conn.execute("PRAGMA foreign_keys = ON;")
-        if is_serverless():
-            conn.execute("PRAGMA journal_mode = DELETE;")
-        else:
-            conn.execute("PRAGMA journal_mode = WAL;")
-    except Exception:
-        pass
+    conn.execute("PRAGMA foreign_keys = ON;")
+    conn.execute("PRAGMA journal_mode = WAL;")
     return conn
 
 
@@ -270,18 +203,6 @@ def init_db():
     # Seed official sources if not present
     seed_sources(cursor)
 
-    # Ingest verified vacancies corpus if database is newly initialized
-    try:
-        cursor.execute("SELECT COUNT(*) as cnt FROM jobs")
-        if cursor.fetchone()["cnt"] == 0:
-            try:
-                from .seed_data import seed_initial_jobs
-            except ImportError:
-                from seed_data import seed_initial_jobs
-            seed_initial_jobs(cursor)
-    except Exception as e:
-        print(f"[Warning]: Failed to seed baseline vacancies: {e}")
-
     conn.commit()
     conn.close()
 
@@ -374,3 +295,4 @@ def seed_sources(cursor):
 if __name__ == "__main__":
     init_db()
     print("Database schema successfully initialized.")
+
