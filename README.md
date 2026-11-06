@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AI-Powered Government Job Finder & Personalized Career Assistant
 
 An intelligent mobile and web application that automatically discovers official government job vacancies across Pakistan, evaluates them against a user's qualifications, age, domicile, and career preferences, and provides a daily personalized shortlist with official application links and step-by-step instructions.
@@ -105,3 +106,7 @@ Run the test suite anytime:
 py tests\test_api_and_matching.py
 ```
 
+=======
+# GOVT-JOB-FINDER
+An intelligent mobile and web application that automatically discovers official government job vacancies across Pakistan, evaluates them against a user's qualifications, age, domicile, and career preferences, and provides a daily personalized shortlist with official application links and step-by-step instructions.
+>>>>>>> 5b43aa6fea9a48f5481e54a97dff0ceb076bd56f
