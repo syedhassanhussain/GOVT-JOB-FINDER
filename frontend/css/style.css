@@ -1,0 +1,139 @@
+/* Modern Pakistani Govt Career Assistant Theme */
+:root {
+  --primary: #047857;
+  --primary-dark: #065f46;
+  --primary-light: #ecfdf5;
+  --accent: #10b981;
+  --gold: #d97706;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --surface: #ffffff;
+  --bg: #f8fafc;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --border: #e2e8f0;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: #0f172a;
+  color: var(--text-main);
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Scrollbar customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Mobile Frame Wrapper Simulation */
+.mobile-viewport-container {
+  max-width: 520px;
+  min-height: 100vh;
+  margin: 0 auto;
+  background-color: #f8fafc;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 1024px) {
+  body.desktop-mode .mobile-viewport-container {
+    max-width: 100%;
+    box-shadow: none;
+  }
+}
+
+/* Pulse animation for live badge */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+.pulse-badge {
+  animation: pulse-subtle 2s infinite ease-in-out;
+}
+
+/* Glassmorphism Cards */
+.glass-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.job-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e2e8f0;
+}
+.job-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(4, 120, 87, 0.1), 0 8px 10px -6px rgba(4, 120, 87, 0.05);
+  border-color: #a7f3d0;
+}
+
+/* Compatibility Score Ring / Badge */
+.score-badge-high {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: white;
+}
+.score-badge-med {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: white;
+}
+.score-badge-low {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  color: white;
+}
+.score-badge-fail {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+}
+
+/* Tab indicator */
+.tab-btn.active {
+  background-color: #047857;
+  color: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(4, 120, 87, 0.2);
+}
+
+/* Bottom Nav bar active state */
+.nav-item.active {
+  color: #047857;
+}
+.nav-item.active svg {
+  stroke: #047857;
+  stroke-width: 2.4;
+}
+
+/* Modal styling */
+.modal-overlay {
+  background-color: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+/* Step list */
+.step-number {
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+

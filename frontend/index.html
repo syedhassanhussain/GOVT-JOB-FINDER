@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PakGovt Job Finder - AI Career Assistant</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            govt: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="desktop-mode bg-slate-900 min-h-screen text-slate-800 antialiased">
+
+  <!-- Desktop Top Switcher Bar -->
+  <header class="bg-slate-950 text-slate-300 border-b border-slate-800 text-xs py-2 px-4 flex justify-between items-center select-none z-50">
+    <div class="flex items-center space-x-2">
+      <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-badge"></span>
+      <span class="font-semibold text-white tracking-wide">Government of Pakistan Recruitment Engine</span>
+      <span class="hidden sm:inline bg-slate-800 text-emerald-400 px-2 py-0.5 rounded text-[11px] font-mono">FPSC • PPSC • SPSC • KPPSC • BPSC • NJP • NTS</span>
+    </div>
+    <div class="flex items-center space-x-3">
+      <button id="toggle-view-btn" class="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded transition">
+        <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+        <span id="view-mode-label">Switch to Mobile View</span>
+      </button>
+      <div class="flex items-center space-x-1.5 bg-slate-800/80 px-2 py-1 rounded">
+        <i data-lucide="user" class="w-3.5 h-3.5 text-emerald-400"></i>
+        <span id="header-user-name" class="text-white font-medium">Guest User</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Viewport (Toggleable Mobile / Desktop layout) -->
+  <div id="viewport-container" class="mobile-viewport-container pb-20 sm:pb-8 shadow-2xl">
+    
+    <!-- Top App Navigation Bar -->
+    <nav class="glass-header sticky top-0 z-40 px-4 py-3 flex justify-between items-center border-b border-slate-200">
+      <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchTab('feed')">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-govt-800 to-govt-600 flex items-center justify-center text-white shadow-md shadow-govt-700/20">
+          <i data-lucide="briefcase" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-1.5">
+            <h1 class="text-base font-bold text-slate-900 leading-none">GovtJobFinder<span class="text-govt-600">.pk</span></h1>
+            <span class="bg-emerald-100 text-govt-800 text-[10px] font-bold px-1.5 py-0.5 rounded">AI Assistant</span>
+          </div>
+          <p class="text-[11px] text-slate-500 font-medium">Automated Pakistani Public Sector Opportunities</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <!-- Notification Bell -->
+        <button id="notif-btn" onclick="switchTab('notifications')" class="relative p-2 rounded-xl text-slate-600 hover:text-govt-700 hover:bg-slate-100 transition">
+          <i data-lucide="bell" class="w-5 h-5"></i>
+          <span id="notif-badge" class="hidden absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">0</span>
+        </button>
+
+        <!-- Profile shortcut -->
+        <button onclick="switchTab('profile')" class="p-2 rounded-xl text-slate-600 hover:text-govt-700 hover:bg-slate-100 transition" title="My Profile & Qualifications">
+          <i data-lucide="user-check" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Content Sections -->
+    <main class="flex-1 p-4 sm:p-6 space-y-5">
+      
+      <!-- ======================================================== -->
+      <!-- SECTION 1: DAILY FEED & PERSONALIZED DASHBOARD           -->
+      <!-- ======================================================== -->
+      <div id="tab-feed" class="tab-content space-y-4">
+        
+        <!-- Welcome & Quick Stats Banner -->
+        <div class="bg-gradient-to-r from-govt-800 via-govt-700 to-emerald-700 rounded-2xl p-4 sm:p-5 text-white shadow-lg shadow-govt-900/10 relative overflow-hidden">
+          <div class="relative z-10">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="inline-block bg-white/20 backdrop-blur-sm text-emerald-100 text-[11px] font-semibold px-2 py-0.5 rounded-full mb-1">
+                  Today's Career Briefing
+                </span>
+                <h2 id="feed-greeting" class="text-lg sm:text-xl font-bold">Discovering Your Government Matches</h2>
+                <p id="feed-subgreeting" class="text-xs text-emerald-100 mt-0.5">Continuous automated scanning across federal & provincial commissions.</p>
+              </div>
+              <button onclick="triggerAutomatedScan()" class="bg-white/10 hover:bg-white/20 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center space-x-1 transition border border-white/20">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">Refresh Scan</span>
+              </button>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-4 gap-2 mt-4 pt-3 border-t border-emerald-600/50 text-center">
+              <div class="bg-white/10 rounded-xl p-1.5">
+                <span id="stat-total" class="block text-base sm:text-lg font-bold leading-none">0</span>
+                <span class="text-[10px] text-emerald-100">Discovered</span>
+              </div>
+              <div class="bg-white/10 rounded-xl p-1.5">
+                <span id="stat-eligible" class="block text-base sm:text-lg font-bold leading-none text-emerald-200">0</span>
+                <span class="text-[10px] text-emerald-100">Eligible</span>
+              </div>
+              <div class="bg-white/10 rounded-xl p-1.5">
+                <span id="stat-high" class="block text-base sm:text-lg font-bold leading-none text-amber-300">0</span>
+                <span class="text-[10px] text-emerald-100">80%+ Match</span>
+              </div>
+              <div class="bg-white/10 rounded-xl p-1.5">
+                <span id="stat-saved" class="block text-base sm:text-lg font-bold leading-none">0</span>
+                <span class="text-[10px] text-emerald-100">Saved</span>
+              </div>
+            </div>
+          </div>
+          <div class="absolute -right-8 -bottom-8 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl"></div>
+        </div>
+
+        <!-- Search & Filter Bar -->
+        <div class="space-y-2">
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+            <input type="text" id="job-search-input" placeholder="Search by title, department (FIA, FBR, WAPDA) or subject..."
+              class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-govt-600 focus:border-transparent transition shadow-sm"
+              oninput="handleSearch(this.value)">
+          </div>
+
+          <!-- Source & Filter Badges -->
+          <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 text-xs select-none scrollbar-none" id="source-filters">
+            <button onclick="setSourceFilter('')" class="source-filter-btn px-3 py-1.5 rounded-lg font-medium whitespace-nowrap bg-govt-700 text-white shadow-sm" data-source="">
+              All Portals
+            </button>
+            <button onclick="setSourceFilter('FPSC')" class="source-filter-btn px-3 py-1.5 rounded-lg font-medium whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50" data-source="FPSC">
+              FPSC (Federal)
+            </button>
+            <button onclick="setSourceFilter('PPSC')" class="source-filter-btn px-3 py-1.5 rounded-lg font-medium whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50" data-source="PPSC">
+              PPSC (Punjab)
+            </button>
+            <button onclick="setSourceFilter('NJP')" class="source-filter-btn px-3 py-1.5 rounded-lg font-medium whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50" data-source="NJP">
+              NJP (National)
+            </button>
+            <button onclick="setSourceFilter('SPSC')" class="source-filter-btn px-3 py-1.5 rounded-lg font-medium whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50" data-source="SPSC">
+              SPSC (Sindh)
+            </button>
+            <button onclick="setSourceFilter('KPPSC')" class="source-filter-btn px-3 py-1.5 rounded-lg font-medium whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50" data-source="KPPSC">
+              KPPSC (KP)
+            </button>
+            <button onclick="setSourceFilter('BPSC')" class="source-filter-btn px-3 py-1.5 rounded-lg font-medium whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50" data-source="BPSC">
+              BPSC (Balochistan)
+            </button>
+            <button onclick="setSourceFilter('NTS')" class="source-filter-btn px-3 py-1.5 rounded-lg font-medium whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50" data-source="NTS">
+              NTS
+            </button>
+            <button onclick="setSourceFilter('OTS')" class="source-filter-btn px-3 py-1.5 rounded-lg font-medium whitespace-nowrap bg-white text-slate-600 border border-slate-200 hover:bg-slate-50" data-source="OTS">
+              OTS
+            </button>
+          </div>
+        </div>
+
+        <!-- Dashboard Tabs (Categories) -->
+        <div class="flex border-b border-slate-200 space-x-4 text-xs font-semibold overflow-x-auto select-none">
+          <button onclick="setCategoryTab('all')" class="feed-tab-btn py-2.5 border-b-2 border-govt-700 text-govt-700 whitespace-nowrap" data-tab="all">
+            All Matches (<span id="tab-count-all">0</span>)
+          </button>
+          <button onclick="setCategoryTab('high')" class="feed-tab-btn py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap" data-tab="high">
+            🔥 Highly Relevant (<span id="tab-count-high">0</span>)
+          </button>
+          <button onclick="setCategoryTab('relevant')" class="feed-tab-btn py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap" data-tab="relevant">
+            Relevant (<span id="tab-count-relevant">0</span>)
+          </button>
+          <button onclick="setCategoryTab('deadlines')" class="feed-tab-btn py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap" data-tab="deadlines">
+            ⏰ Closing Soon (<span id="tab-count-deadlines">0</span>)
+          </button>
+          <button onclick="setCategoryTab('saved')" class="feed-tab-btn py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap" data-tab="saved">
+            Saved (<span id="tab-count-saved">0</span>)
+          </button>
+          <button onclick="setCategoryTab('not_eligible')" class="feed-tab-btn py-2.5 border-b-2 border-transparent text-slate-500 hover:text-slate-800 whitespace-nowrap" data-tab="not_eligible">
+            Ineligible (<span id="tab-count-ineligible">0</span>)
+          </button>
+        </div>
+
+        <!-- Job Cards Container -->
+        <div id="job-cards-list" class="space-y-3.5">
+          <!-- Dynamically populated -->
+          <div class="text-center py-12 text-slate-400">
+            <i data-lucide="loader" class="w-6 h-6 animate-spin mx-auto mb-2 text-govt-600"></i>
+            <p class="text-xs">Loading discovered vacancies...</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- SECTION 2: USER PROFILE & ONBOARDING WIZARD              -->
+      <!-- ======================================================== -->
+      <div id="tab-profile" class="tab-content hidden space-y-5">
+        
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center space-x-3 pb-3 border-b border-slate-100">
+            <div class="w-10 h-10 rounded-full bg-govt-100 text-govt-700 flex items-center justify-center font-bold">
+              <i data-lucide="user" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Personal & Academic Profile</h2>
+              <p class="text-xs text-slate-500">Configure once. The AI will continuously match you against newly announced jobs.</p>
+            </div>
+          </div>
+
+          <form id="profile-form" onsubmit="handleProfileSubmit(event)" class="space-y-4">
+            
+            <!-- User Basic Info -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name *</label>
+                <input type="text" id="prof-name" required placeholder="Enter your full name"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Email Address *</label>
+                <input type="email" id="prof-email" required placeholder="Enter your email address"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Qualification & Degree -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Highest Qualification *</label>
+                <select id="prof-qualification" required
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+                  <option value="" disabled selected>-- Select Qualification --</option>
+                  <option value="Bachelor (16 Years / BS)">Bachelor (16 Years / BS / 4-Year)</option>
+                  <option value="Master (16 Years)">Master (16 Years / MA / MSc)</option>
+                  <option value="MPhil / MS (18 Years)">MPhil / MS (18 Years)</option>
+                  <option value="Bachelor (14 Years)">Bachelor (14 Years / BA / BSc)</option>
+                  <option value="Intermediate">Intermediate (FA / FSc / A-Level)</option>
+                  <option value="Matric">Matriculation</option>
+                  <option value="PhD">PhD / Doctorate</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Degree Title *</label>
+                <input type="text" id="prof-degree" required placeholder="Enter your degree title (e.g. BS CS, MBA, LLB)"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Field of Study *</label>
+                <select id="prof-field" required
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+                  <option value="" disabled selected>-- Select Field of Study --</option>
+                  <option value="Computer Science / IT">Computer Science / Software / IT</option>
+                  <option value="Administration & Management">Administration & Management Sciences</option>
+                  <option value="Accounting & Finance">Accounting & Finance / Commerce</option>
+                  <option value="Education & Academia">Education & Academia / Teaching</option>
+                  <option value="Engineering">Engineering (PEC Registered)</option>
+                  <option value="Law & Judiciary">Law & Judiciary / Legal</option>
+                  <option value="Medical & Healthcare">Medical & Healthcare</option>
+                  <option value="Police & Law Enforcement">Police & Law Enforcement</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Institution / University</label>
+                <input type="text" id="prof-institution" placeholder="University or Institution name (optional)"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Graduation Year</label>
+                <input type="number" id="prof-year" placeholder="Graduation year (e.g. 2024)" min="1980" max="2027"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">CGPA / Percentage</label>
+                <input type="text" id="prof-cgpa" placeholder="CGPA or % (e.g. 3.4 or 75%)"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Age & Domicile -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Date of Birth * (For Age Limit Calculation)</label>
+                <input type="date" id="prof-dob" required
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Gender *</label>
+                <select id="prof-gender" required
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+                  <option value="" disabled selected>-- Select Gender --</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Transgender">Transgender</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Province *</label>
+                <select id="prof-province" required onchange="handleProvinceChange(this.value)"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+                  <option value="" disabled selected>-- Select Province --</option>
+                  <option value="Punjab">Punjab</option>
+                  <option value="Sindh (Urban)">Sindh (Urban - Karachi/Hyd/Sukkur)</option>
+                  <option value="Sindh (Rural)">Sindh (Rural)</option>
+                  <option value="Khyber Pakhtunkhwa">Khyber Pakhtunkhwa</option>
+                  <option value="Balochistan">Balochistan</option>
+                  <option value="Islamabad (ICT)">Islamabad (ICT)</option>
+                  <option value="Azad Jammu & Kashmir (AJK)">Azad Jammu & Kashmir (AJK)</option>
+                  <option value="Gilgit-Baltistan (GB)">Gilgit-Baltistan (GB)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Domicile District *</label>
+                <input type="text" id="prof-domicile" required placeholder="District of Domicile"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Current City *</label>
+                <input type="text" id="prof-city" required placeholder="City of residence"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+              </div>
+            </div>
+
+            <!-- Experience & Preferences -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Years of Relevant Experience</label>
+                <input type="number" id="prof-exp" step="0.5" min="0" placeholder="Years of experience (e.g. 0 or 2)"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Employment Preference</label>
+                <select id="prof-emp-type"
+                  class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+                  <option value="" disabled selected>-- Select Employment Preference --</option>
+                  <option value="Permanent">Permanent (Regular Gazetted/Non-Gazetted)</option>
+                  <option value="Contract">Contract / Project Scale</option>
+                  <option value="Any">Any Public Sector Opportunity</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Key Skills (Comma separated)</label>
+              <input type="text" id="prof-skills" placeholder="Enter skills (e.g. MS Office, Data Analysis, Python, Accounting)"
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-govt-600 focus:bg-white focus:outline-none">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1.5">Career Interests & Target Fields</label>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs" id="pref-fields-container">
+                <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100">
+                  <input type="checkbox" name="pref_field" value="Computer Science / IT" class="rounded text-govt-700 focus:ring-govt-600">
+                  <span>IT / Software</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100">
+                  <input type="checkbox" name="pref_field" value="Administration & Management" class="rounded text-govt-700 focus:ring-govt-600">
+                  <span>Administration</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100">
+                  <input type="checkbox" name="pref_field" value="Accounting & Finance" class="rounded text-govt-700 focus:ring-govt-600">
+                  <span>Finance & Tax</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100">
+                  <input type="checkbox" name="pref_field" value="Education & Academia" class="rounded text-govt-700 focus:ring-govt-600">
+                  <span>Education / Lecturer</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100">
+                  <input type="checkbox" name="pref_field" value="Engineering" class="rounded text-govt-700 focus:ring-govt-600">
+                  <span>Engineering</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100">
+                  <input type="checkbox" name="pref_field" value="Police & Law Enforcement" class="rounded text-govt-700 focus:ring-govt-600">
+                  <span>Police & Security</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100">
+                  <input type="checkbox" name="pref_field" value="Law & Judiciary" class="rounded text-govt-700 focus:ring-govt-600">
+                  <span>Law & Legal</span>
+                </label>
+                <label class="flex items-center space-x-2 bg-slate-50 p-2 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100">
+                  <input type="checkbox" name="pref_field" value="Medical & Healthcare" class="rounded text-govt-700 focus:ring-govt-600">
+                  <span>Healthcare</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="pt-3 flex items-center justify-between">
+              <span id="profile-save-status" class="text-xs text-govt-700 font-medium"></span>
+              <button type="submit" class="bg-govt-700 hover:bg-govt-800 text-white font-semibold px-5 py-2.5 rounded-xl text-xs shadow-md shadow-govt-700/20 flex items-center space-x-2 transition">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span>Save Profile & Calculate Matches</span>
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- SECTION 3: NOTIFICATIONS CENTER                          -->
+      <!-- ======================================================== -->
+      <div id="tab-notifications" class="tab-content hidden space-y-4">
+        
+        <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+          <div>
+            <h2 class="text-sm font-bold text-slate-900">Career Alerts & Digest</h2>
+            <p class="text-xs text-slate-500">Real-time matching notices & deadline countdown alerts</p>
+          </div>
+          <button onclick="markAllNotificationsAsRead()" class="text-xs text-govt-700 hover:text-govt-800 font-semibold px-3 py-1.5 bg-govt-50 rounded-lg">
+            Mark all read
+          </button>
+        </div>
+
+        <div id="notifications-list" class="space-y-2.5">
+          <!-- Populated dynamically -->
+          <div class="text-center py-8 text-slate-400 text-xs">No notifications yet.</div>
+        </div>
+
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- SECTION 4: ADMIN DASHBOARD & SCRAPER MONITOR             -->
+      <!-- ======================================================== -->
+      <div id="tab-admin" class="tab-content hidden space-y-5">
+        
+        <!-- Admin Header -->
+        <div class="bg-slate-900 text-white p-5 rounded-2xl shadow-lg space-y-4 border border-slate-800">
+          <div class="flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h2 class="text-base font-bold">Government Recruitment Discovery Center</h2>
+                <p class="text-xs text-slate-400">Automated Harvester & Gazette Verification Console</p>
+              </div>
+            </div>
+            <button onclick="triggerAdminFullCycle()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center space-x-1.5 transition shadow-lg shadow-emerald-900/30">
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+              <span>Run Full Automation Cycle</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Sources Status Table -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600">Official Recruitment Sources</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="text-[11px] text-slate-400 bg-slate-50 uppercase border-y border-slate-100">
+                <tr>
+                  <th class="py-2 px-3">Commission / Body</th>
+                  <th class="py-2 px-3">Category</th>
+                  <th class="py-2 px-3">Status</th>
+                  <th class="py-2 px-3">Active Vacancies</th>
+                  <th class="py-2 px-3">Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-sources-tbody" class="divide-y divide-slate-100">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Scrape Audit Logs -->
+        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600">Scrape & Ingestion Audit Logs</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="text-[11px] text-slate-400 bg-slate-50 uppercase border-y border-slate-100">
+                <tr>
+                  <th class="py-2 px-3">Timestamp</th>
+                  <th class="py-2 px-3">Source</th>
+                  <th class="py-2 px-3">Status</th>
+                  <th class="py-2 px-3">Found / Ingested</th>
+                  <th class="py-2 px-3">Duration</th>
+                </tr>
+              </thead>
+              <tbody id="admin-logs-tbody" class="divide-y divide-slate-100 font-mono text-[11px]">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (Mobile Native Style) -->
+    <footer class="glass-header sticky bottom-0 z-40 border-t border-slate-200 px-2 py-1.5 flex justify-around items-center select-none">
+      <button onclick="switchTab('feed')" class="nav-item active flex flex-col items-center py-1 px-3 rounded-lg text-slate-500 hover:text-govt-700 transition" data-nav="feed">
+        <i data-lucide="layout-grid" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium mt-0.5">Feed</span>
+      </button>
+      <button onclick="switchTab('profile')" class="nav-item flex flex-col items-center py-1 px-3 rounded-lg text-slate-500 hover:text-govt-700 transition" data-nav="profile">
+        <i data-lucide="user" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium mt-0.5">My Profile</span>
+      </button>
+      <button onclick="switchTab('notifications')" class="nav-item flex flex-col items-center py-1 px-3 rounded-lg text-slate-500 hover:text-govt-700 transition" data-nav="notifications">
+        <i data-lucide="bell" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium mt-0.5">Alerts</span>
+      </button>
+      <button onclick="switchTab('admin')" class="nav-item flex flex-col items-center py-1 px-3 rounded-lg text-slate-500 hover:text-govt-700 transition" data-nav="admin">
+        <i data-lucide="settings" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium mt-0.5">Admin</span>
+      </button>
+    </footer>
+
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- DEDICATED JOB DETAILS & STEP-BY-STEP APPLICATION MODAL   -->
+  <!-- ======================================================== -->
+  <div id="job-detail-modal" class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+      
+      <!-- Modal Header -->
+      <div class="px-5 py-4 border-b border-slate-100 flex justify-between items-start bg-slate-50">
+        <div>
+          <div class="flex items-center space-x-2 mb-1">
+            <span id="modal-source-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-govt-700 text-white">FPSC</span>
+            <span id="modal-case-no" class="text-xs font-mono text-slate-500">Case No. F.4-48/2026-R</span>
+            <span id="modal-scale-badge" class="bg-emerald-100 text-emerald-800 text-[10px] font-semibold px-2 py-0.5 rounded">BPS-17</span>
+          </div>
+          <h2 id="modal-job-title" class="text-lg font-bold text-slate-900 leading-tight">Assistant Director (Software Engineering)</h2>
+          <p id="modal-dept" class="text-xs text-slate-600 font-medium">Federal Investigation Agency (FIA)</p>
+        </div>
+        <button onclick="closeJobModal()" class="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body (Scrollable) -->
+      <div class="p-5 overflow-y-auto space-y-5 text-xs text-slate-700 flex-1">
+        
+        <!-- Compatibility AI Breakdown Card -->
+        <div id="modal-match-box" class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <div id="modal-score-badge" class="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-white score-badge-high shadow">
+                98%
+              </div>
+              <div>
+                <span id="modal-classification" class="text-xs font-bold text-govt-800 block">Highly Relevant Match</span>
+                <span class="text-[11px] text-govt-600">Personalized evaluation against your credentials</span>
+              </div>
+            </div>
+            <span id="modal-eligibility-chip" class="bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">
+              Eligible to Apply
+            </span>
+          </div>
+
+          <!-- Itemized Match Explanations -->
+          <div class="pt-2 border-t border-emerald-200/60 space-y-1.5" id="modal-match-reasons-list">
+            <!-- Bullet points populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Quick Facts Matrix -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+            <span class="block text-[10px] text-slate-400 font-semibold uppercase">Total Vacancies</span>
+            <span id="modal-vacancies" class="font-bold text-slate-800 text-sm">28 Seats</span>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+            <span class="block text-[10px] text-slate-400 font-semibold uppercase">Application Deadline</span>
+            <span id="modal-deadline" class="font-bold text-red-600 text-sm">Nov 28, 2026</span>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+            <span class="block text-[10px] text-slate-400 font-semibold uppercase">Age Limit</span>
+            <span id="modal-age-limit" class="font-bold text-slate-800 text-sm">22 - 35 Yrs</span>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+            <span class="block text-[10px] text-slate-400 font-semibold uppercase">Posting Location</span>
+            <span id="modal-location" class="font-bold text-slate-800 text-sm">Islamabad / All PK</span>
+          </div>
+        </div>
+
+        <!-- Educational & Experience Requirements -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-slate-900 text-xs flex items-center space-x-1.5">
+            <i data-lucide="graduation-cap" class="w-4 h-4 text-govt-700"></i>
+            <span>Required Qualification & Experience</span>
+          </h4>
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1 leading-relaxed">
+            <p id="modal-degree-req" class="text-slate-800 font-medium"></p>
+            <p id="modal-exp-req" class="text-slate-500 text-[11px]"></p>
+          </div>
+        </div>
+
+        <!-- Domicile & Provincial Quota -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-slate-900 text-xs flex items-center space-x-1.5">
+            <i data-lucide="map-pin" class="w-4 h-4 text-govt-700"></i>
+            <span>Eligible Domicile & Provincial Quota</span>
+          </h4>
+          <div id="modal-domiciles-tags" class="flex flex-wrap gap-1.5">
+            <!-- Tags inserted here -->
+          </div>
+        </div>
+
+        <!-- Official Fee & Bank Challan Procedure -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-slate-900 text-xs flex items-center space-x-1.5 text-amber-800">
+            <i data-lucide="receipt" class="w-4 h-4 text-amber-600"></i>
+            <span>Application Fee & Treasury Challan Details</span>
+          </h4>
+          <div class="bg-amber-50/70 border border-amber-200 p-3 rounded-xl text-amber-950 space-y-1">
+            <p id="modal-fee" class="font-semibold"></p>
+            <p class="text-[11px] text-amber-900/80">Fee must be submitted via National Bank of Pakistan (NBP), State Bank of Pakistan (SBP), or 1Link PSID as officially specified before the closing deadline.</p>
+          </div>
+        </div>
+
+        <!-- Step-by-Step Application Procedure -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-slate-900 text-xs flex items-center space-x-1.5">
+            <i data-lucide="list-ordered" class="w-4 h-4 text-govt-700"></i>
+            <span>Step-by-Step Official Application Procedure</span>
+          </h4>
+          <div id="modal-steps-container" class="space-y-2">
+            <!-- Steps populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Required Documents Checklist -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-slate-900 text-xs flex items-center space-x-1.5">
+            <i data-lucide="check-square" class="w-4 h-4 text-govt-700"></i>
+            <span>Required Documents Checklist</span>
+          </h4>
+          <ul id="modal-docs-list" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
+            <!-- Checked items -->
+          </ul>
+        </div>
+
+        <!-- Syllabus & Test Pattern -->
+        <div class="space-y-2">
+          <h4 class="font-bold text-slate-900 text-xs flex items-center space-x-1.5">
+            <i data-lucide="book-open" class="w-4 h-4 text-govt-700"></i>
+            <span>Screening Test Pattern & Syllabus</span>
+          </h4>
+          <div id="modal-syllabus" class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-slate-700 text-[11px] leading-relaxed">
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer (Official verified link actions) -->
+      <div class="px-5 py-3 border-t border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center space-x-2">
+          <button id="modal-save-btn" onclick="toggleSaveCurrentJob()" class="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-semibold flex items-center space-x-1.5 transition">
+            <i data-lucide="bookmark" class="w-4 h-4"></i>
+            <span id="modal-save-btn-text">Save Job</span>
+          </button>
+          <a id="modal-official-ad-link" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl text-slate-600 hover:text-slate-900 text-xs font-medium flex items-center space-x-1 transition">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            <span>View Official Gazette / Ad</span>
+          </a>
+        </div>
+
+        <a id="modal-apply-btn" href="#" target="_blank" rel="noopener noreferrer"
+          class="bg-govt-700 hover:bg-govt-800 text-white font-bold px-5 py-2.5 rounded-xl text-xs flex items-center space-x-2 shadow-md shadow-govt-700/20 transition">
+          <span>Apply on Official Commission Portal</span>
+          <i data-lucide="external-link" class="w-4 h-4"></i>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Application Script -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
+
