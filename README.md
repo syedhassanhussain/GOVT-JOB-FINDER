@@ -60,16 +60,17 @@ py -m pip install -r requirements.txt
 ### 3. Run the Application
 Start the application server:
 ```bash
-py run_server.py
+py main.py
 ```
 Or directly with uvicorn:
 ```bash
-py -m uvicorn backend.app.main:app
+py -m uvicorn main:app --reload
 ```
 
 ### 4. Access the App
 - **Web App / Mobile Experience**: Open [http://localhost:8000](http://localhost:8000)
 - **Interactive REST API Docs**: Open [http://localhost:8000/docs](http://localhost:8000/docs)
+- **API Health Check**: Open [http://localhost:8000/api/health](http://localhost:8000/api/health)
 
 ---
 
@@ -77,11 +78,14 @@ py -m uvicorn backend.app.main:app
 
 ```
 d:\GOVT JOB FINDER\
+├── api\
+│   └── index.py                 # Vercel Serverless Function entrypoint
 ├── backend\
+│   ├── __init__.py
 │   └── app\
 │       ├── __init__.py
 │       ├── main.py              # FastAPI endpoints & static file router
-│       ├── database.py          # SQLite database connection & schema
+│       ├── database.py          # SQLite & MongoDB Atlas integration
 │       ├── models.py            # Pydantic schemas & validation
 │       ├── matching_engine.py   # AI eligibility rules & 0-100% scorer
 │       ├── scraper_engine.py    # Harvester for FPSC, PPSC, SPSC, KPPSC, BPSC, NJP, NTS
@@ -91,11 +95,13 @@ d:\GOVT JOB FINDER\
 │   ├── index.html               # Responsive Mobile & Desktop Web App
 │   ├── css\style.css            # Custom government styling & animations
 │   └── js\app.js                # State management, API calls, and modals
-├── data\                        # SQLite database & runtime logs
 ├── tests\
 │   └── test_api_and_matching.py # Automated test suite (100% pass)
+├── main.py                      # Root FastAPI entrypoint
+├── pyproject.toml               # Vercel FastAPI framework configuration
+├── vercel.json                  # Vercel Edge rewrite routing rules
 ├── requirements.txt             # Python dependencies
-├── run_server.py                # Convenient startup script
+├── .gitignore                   # Clean repository exclusions
 └── README.md
 ```
 
