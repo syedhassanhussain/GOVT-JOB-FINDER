@@ -506,3 +506,4 @@ def seed_initial_jobs(cursor) -> int:
     """)
 
     return seeded_count
+
